@@ -149,7 +149,7 @@ def delete_file_folder_dialog():
 
     delete.config(bg='#1c1c1c')
     
-    g_title = tk.Label(delete, text='Download file', width=50, height=1, fg='#dedede', bg='#141414', font='fixedsys')
+    g_title = tk.Label(delete, text='Delete file', width=50, height=1, fg='#dedede', bg='#141414', font='fixedsys')
     g_title.pack()
 
     #listbox
