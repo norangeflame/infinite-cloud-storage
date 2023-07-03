@@ -43,12 +43,19 @@ urls = []
 ffi = 0
 g_progress = ''
 
-
+g_dwl_status = ''
+g_status = ''
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
+def update_main_status(labeltext):
+    global g_status
+    g_status.config(text=labeltext)
+    g_status.update_idletasks() 
+
 def upload_file_dialog():
+    update_main_status('Choosing file...')
     try:
         file = filedialog.askopenfilename()
         filename = os.path.basename(file)
@@ -56,16 +63,19 @@ def upload_file_dialog():
         print('Selected file:', file)
     except FileNotFoundError:
         tk.messagebox.showerror(title='Error', message='Invalid file name or file doesn\'t exist.')
+        update_main_status('Ready')
         return
-    
+    update_main_status('Uploading...')
     if checkifduplicate(filename, master):
         print('The filename is already present in the master record.')
+        tk.messagebox.showerror(title='Error', message='This file has already been uploaded.')
     
     else:
         print('The filename is not present in the master record.')
         
         if finfo.st_size <= 18874368: #1024 * 1024 * 18
             upload_file(file, False, False)
+            
         else:
             num_parts = split_file(file, chunk_size) #splits
             part_one = True
@@ -80,16 +90,21 @@ def upload_file_dialog():
                 del num
             webhook = DiscordWebhook(url=wbhkurl, content='<PADDING>')
             response = webhook.execute()
+        
+    labeltext = 'Ready'
+    update_main_status('Ready')
     return
 
 def upload_folder_dialog():
+    update_main_status('Choosing folder...')
     foldername = filedialog.askdirectory()
     if foldername == '':
             tk.messagebox.showerror(title='Error', message='Invalid folder name or folder doesn\'t exist.')
+            update_main_status('Ready')
             return
     print('Selected folder:', foldername)
     tarball_path = f'{foldername}.tar'
-
+    update_main_status('Compressing folder...')
     tar_command = ['tar', '-cf', tarball_path, '-C', foldername, '.']
     subprocess.run(tar_command)
 
@@ -99,11 +114,12 @@ def upload_folder_dialog():
     subprocess.run(' '.join(bzip2_command), shell=True)
 
     #
-    
-    upload_file(compressed_tarball_path)
+    update_main_status('Uploading folder...')
+    upload_file(compressed_tarball_path, False, False)
+    update_main_status('Ready')
     os.remove(tarball_path)
     os.remove(compressed_tarball_path)
-    
+
     return
 
 
@@ -111,9 +127,12 @@ def upload_folder_dialog():
 def download_dialog():
     #global since its used in another function
     global g_filebrowse
+    global g_dwl_status
+    
     dwl = tk.Tk()
     dwl.title('Download a file/folder')
     dwl.config(bg='#1c1c1c')
+    g_frame = tk.Frame(dwl, bg='#1c1c1c')
     g_title = tk.Label(dwl, text='Download file', width=50, height=1, fg='#dedede', bg='#141414', font='fixedsys')
     g_title.pack()
 
@@ -122,6 +141,7 @@ def download_dialog():
     with open(master, "r") as file:
         lines = file.readlines()
 
+    
     g_filebrowse = tk.Listbox(dwl, height=20, width=50, selectmode='SINGLE', fg='#dedede', bg='#141414', font='fixedsys')
     index = 0
     for line in lines:
@@ -134,9 +154,14 @@ def download_dialog():
             g_filebrowse.insert(index, line.strip())
 
     g_filebrowse.pack()
-
-    g_dwl_file_sel = tk.Button(dwl, text='Download', command=dwl_file_sel, fg='#dedede', bg='#262626', activebackground='#363636', activeforeground='#dedede', relief='flat', font='fixedsys')
+    
+    g_dwl_status = tk.Label(g_frame, text='Ready', width=50, height=1, fg='#dedede', bg='#141414', font='fixedsys')
+    
+    
+    g_dwl_file_sel = tk.Button(g_frame, text='Download', command=dwl_file_sel, fg='#dedede', bg='#262626', activebackground='#363636', activeforeground='#dedede', relief='flat', font='fixedsys')
     g_dwl_file_sel.pack()
+    g_dwl_status.pack()
+    g_frame.pack()
 
     return
 
@@ -185,15 +210,20 @@ def checkifduplicate(filename, file_path):
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
+def update_dwl_status(text):
+    g_dwl_status.config(text=text)
+    g_dwl_status.update_idletasks()
+ 
+
 #get selected FILE or FOLDER (STORED AS A FILE) to pass to the find function
 def dwl_file_sel():
+    update_dwl_status('Downloading...')
+    update_main_status('Downloading...')
     for i in g_filebrowse.curselection():
         print(g_filebrowse.get(i))
         dwl_file_sel = g_filebrowse.get(i)
         if '<SPLIT>' in dwl_file_sel:
-            
-            print('unf')
-            
+                        
             dwl_file_sel = dwl_file_sel.replace(' <SPLIT>', '')
             find_split(dwl_file_sel)
             print(urls)
@@ -210,10 +240,10 @@ def dwl_file_sel():
             download_file(url)
             
         else:
-            
             url = find(dwl_file_sel)
             download_file(url)
-            
+    update_dwl_status('Ready')
+    update_main_status('Ready')
     return
 
 
@@ -223,11 +253,13 @@ def upload_file(file, multiple, p_one):
         filename = os.path.basename(file)
         print(f'Uploading "{file}"')
         with open(file, 'rb') as f:
+            
             webhook = DiscordWebhook(url=wbhkurl, content=filename)
             webhook.add_file(file=f.read(), filename=filename)
             response = webhook.execute()
             print(response)
             print('Successfully uploaded')
+
             #add to MASTER RECORD (which is a txt file located in the same directory as the script)
             if multiple == True:
                 if p_one == True:
@@ -245,7 +277,7 @@ def upload_file(file, multiple, p_one):
             return
         return
 
-        
+    
     except:
         print(f'There was an error uploading "{file}" to the cloud. Please check your connection and try again.')
     return
@@ -269,12 +301,17 @@ def download_file(url):
         tar_command = ['tar', '-xvjf', tarball_path, '-C', strippedname]
         subprocess.run(tar_command)
         os.remove(tarball_path)
-        
+        update_main_status('Ready')
+        update_dwl_status('Ready')
     elif '.part' in urlfilename:
         print('Downloaded; not opening PART file')
+        update_main_status('Combining files...')
+        update_dwl_status('Combining files...')
     else:
-        os.system(urlfilename)
-        print('File downloaded and opened')
+        #os.system(urlfilename)
+        print('File downloaded')
+        update_main_status('Ready')
+        update_dwl_status('Ready')
     return
 
 
@@ -459,6 +496,9 @@ def join_files(filename, num_parts):
                 f.write(part_file.read())
             #Remove the part file after joining
             os.remove(part_filename)
+    update_main_status('Ready')
+    update_dwl_status('Ready')
+    return
 
 def del_file_sel():
     for i in g_deletebrowse.curselection():
@@ -487,14 +527,16 @@ def del_file_sel():
 #this is the main screen with buttons etc.
 def main():
     #global g_progress
+    global g_status
     window = tk.Tk()
     window.title('Infinite Cloud Storage')
-    window.geometry('380x150')
+    window.geometry('380x160')
     window.config(bg='#1c1c1c')
     
     g_topframe = tk.Frame(window, bg='#1c1c1c')
     g_middleframe = tk.Frame(window, bg='#1c1c1c', pady=15)
     g_bottomframe = tk.Frame(window, bg='#1c1c1c', pady=2)
+    g_statusframe = tk.Frame(window, bg='#1c1c1c')
     
     g_title = tk.Label(g_topframe, text='Infinite Cloud Storage via Discord', fg='#dedede', bg='#141414', width=60, height=3, font='fixedsys')
 
@@ -506,6 +548,7 @@ def main():
 
     g_del_fil_fol_btn = tk.Button(g_bottomframe, text='Delete File', command=delete_file_folder_dialog, width=20, fg='#dedede', bg='#262626', activebackground='#363636', activeforeground='#dedede', relief='flat', font='fixedsys')
 
+    g_status = tk.Label(g_statusframe, text='Ready', width=50, height=1, fg='#dedede', bg='#141414', font='fixedsys')
 
     #packing
     g_title.pack()
@@ -513,9 +556,11 @@ def main():
     g_upl_fol_btn.pack(side='left')
     g_dwl_fil_fol_btn.pack(side='right')
     g_del_fil_fol_btn.pack(side='right')
+    g_status.pack()
     g_topframe.pack()
     g_middleframe.pack()
     g_bottomframe.pack()
+    g_statusframe.pack()
 
     try:
         icon = tk.PhotoImage(file = 'main.png')
