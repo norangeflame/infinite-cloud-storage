@@ -1,49 +1,3 @@
-###Unlimited Cloud Storage via Discord###
-#----------------------------------------
-#Usage:
-# - Add your token to the "token" variable
-# - Add the channel ID to store files to the "channelId" variable
-# - Add the webhook URL to both the "wbhkurl" variable
-# - NOTE: make sure you don't use the file storing channel for general messages. This will cause longer download times.
-# - NOTE: make sure the Webhook is set to send messages to the file storing channel. A mismatch in your channelId and the channel
-#         that the webhook is set to will break the cloud storage.
-#
-#
-#
-#
-#
-
-from discord_webhook import DiscordWebhook #NEED TO INSTALL (run in command prompt: pip install discord-webhook)
-import asyncio
-import tkinter as tk
-from tkinter import ttk
-from tkinter import filedialog
-import os
-import requests
-import json
-import urllib.request
-import subprocess
-import time
-
-#variables
-token = 'TOKEN_HERE'
-channelId = 'CHANNEL_ID_TO_STORE_FILES_HERE'
-limit = 100
-
-wbhkurl = 'WEBHOOK_URL_HERE'
-webhook = DiscordWebhook(url=wbhkurl, username="Cloud Storage Webhook") #Can change username if you want
-
-
-master = 'master-record.txt'
-
-parts = 0
-chunk_size = 18 * 1024 * 1024  #18Mb; Discord limit = 20Mb, so I put 18 to be safe
-
-urls = []
-ffi = 0
-g_progress = ''
-
-
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -262,18 +216,19 @@ def download_file(url):
         f.write(response.content)
     strippedname = urlfilename.replace('.tar.bz2', '')
     if '.tar.bz2' in urlfilename:
-        
+        print('Decompressing folder')
         os.mkdir(strippedname)
         tarball_path = urlfilename
 
         tar_command = ['tar', '-xvjf', tarball_path, '-C', strippedname]
         subprocess.run(tar_command)
         os.remove(tarball_path)
+        
     elif '.part' in urlfilename:
-        print('not opening PART file')
+        print('Downloaded; not opening PART file')
     else:
         os.system(urlfilename)
-    print('File downloaded and opened')
+        print('File downloaded and opened')
     return
 
 
@@ -351,36 +306,55 @@ def find_split(filename):
     #headers
     headers = {'Authorization':'Bot ' + token}
 
+
+    
+    r = requests.get(f'https://discord.com/api/v9/channels/{channelId}/messages?limit=1', headers=headers)    
+    response = json.loads(r.text)
+    n = 1
+    last_id = response[0]['id']
+    print('First')       
     #getting most recent 100 messages. log the ID last message of the set of 100, in case the file is not found. Then do another search with ?before=100th_msg_ID
     while file_found == False:
         ffi = ffi + 1
         if ffi == 1:
-            #shorter GET url (no ?after={first_id})
-            r = requests.get(f'https://discord.com/api/v9/channels/{channelId}/messages?limit={limit}', headers=headers)
-            
-            response = json.loads(r.text)
-            #get the msg ID. IDK why i called it first_id
-            n = 1
-            first_id = response[n]['id']
-            
-            #modify the filename to get filename.part1
-            current_split_name = f'{filename}.part1'
-
-            for msg in response:
+            first_file_found = False
+            while first_file_found == False:
+                time.sleep(1)
+                #shorter GET ur l (no ?after={first_id})
+                r = requests.get(f'https://discord.com/api/v9/channels/{channelId}/messages?limit={limit}&before={last_id}', headers=headers)
+                #print(response)
+                response = json.loads(r.text)
+                #get the msg ID. IDK why i called it first_id
+                n = limit - 1
+                e = 1
                 try:
-                    url = msg['attachments'][0]['url']
-                    print(url)
-                    if current_split_name in url:
-                        print('Part1 Found')
-                        urls.append(url)
-                        first_id = response[n]['id']
-                        break
-                    
-                    else:
-                        print('File not found')
-                    n += 1
-                except IndexError:
-                    print('Message has no attachment...(or an error has occured)')
+                    first_id = response[e]['id']
+                    last_id = response[n]['id']
+                    #print(f'{first_id}; search function')
+                except:
+                    print('Error')
+                #modify the filename to get filename.part1
+                current_split_name = f'{filename}.part1'
+
+                for msg in response:
+                    try:
+                        if len(msg['attachments']) > 0:
+                            url = msg['attachments'][0]['url']
+                            print(url)
+                            if current_split_name in url:
+                                print('Part1 Found')
+                                urls.append(url)
+                                first_id = response[e]['id']
+                                first_file_found = True
+                                break
+                            
+                            else:
+                                print('File not found')
+                        else:
+                            print('Message has no attachment')
+                    #n += 1
+                    except:
+                        print('an error has occured')
         elif ffi > 1:
             #longer GET
             
@@ -390,20 +364,25 @@ def find_split(filename):
 
             #modify the filename to get filename.part(n)
             current_split_name = f'{filename}.part{ffi}'
-
+            print('get all func')
+            print(ffi)
             #if id in response:
             for msg in response:
                 try:
-                    url = msg['attachments'][0]['url']
-                    print(url)
-                    print(msg['id'])
-                    if current_split_name in url:
-                        print(f'Part{ffi} Found')
-                        urls.append(url)
-                        first_id = msg['id']
-                        break
+                    if len(msg['attachments']) > 0:
+                        url = msg['attachments'][0]['url']
+                        print(url)
+                        print(msg['id'])
+                        if current_split_name in url:
+                            print(f'Part{ffi} Found')
+                            urls.append(url)
+                            first_id = msg['id']
+                            break
+                        else:
+                            print('File not found; last PART file reached')
+                            file_found = True
                     else:
-                        print('File not found')
+                        print('No attachment; last PART file reached')
                         file_found = True
                 except IndexError:
                     print('No attachment/Other error')
