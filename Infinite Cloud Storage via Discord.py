@@ -1,3 +1,49 @@
+###Unlimited Cloud Storage via Discord###
+#----------------------------------------
+#Usage:
+# - Add your token to the "token" variable
+# - Add the channel ID to store files to the "channelId" variable
+# - Add the webhook URL to both the "wbhkurl" variable
+# - NOTE: make sure you don't use the file storing channel for general messages. This will cause longer download times.
+# - NOTE: make sure the Webhook is set to send messages to the file storing channel. A mismatch in your channelId and the channel
+#         that the webhook is set to will break the cloud storage.
+#
+#
+#
+#
+#
+
+from discord_webhook import DiscordWebhook #NEED TO INSTALL (run in command prompt: pip install discord-webhook)
+import asyncio
+import tkinter as tk
+from tkinter import ttk
+from tkinter import filedialog
+import os
+import requests
+import json
+import urllib.request
+import subprocess
+import time
+
+#variables
+token = 'TOKEN_HERE'
+channelId = 'CHANNEL_ID_TO_STORE_FILES_HERE'
+limit = 100
+
+wbhkurl = 'WEBHOOK_URL_HERE'
+webhook = DiscordWebhook(url=wbhkurl, username="Cloud Storage Webhook") #Can change username if you want
+
+
+master = 'master-record.txt'
+
+parts = 0
+chunk_size = 18 * 1024 * 1024  #18Mb; Discord limit = 20Mb, so I put 18 to be safe
+
+urls = []
+ffi = 0
+g_progress = ''
+
+
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
