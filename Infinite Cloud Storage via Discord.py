@@ -46,6 +46,10 @@ g_progress = ''
 g_dwl_status = ''
 g_status = ''
 
+cs = 10 * 1024 * 1024  #10Mb
+units_size = 1024 * 1024
+units = 'Mb/s'
+
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -287,15 +291,38 @@ def download_file(url):
     headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
     }
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, stream=True)
     urlfilename = os.path.basename(url)
     print(urlfilename)
+
+    total_size = int(response.headers.get('content-length', 0))
+    downloaded_size = 0
+    start_time = time.time()
+    
     with open(urlfilename, 'wb') as f:
-        f.write(response.content)
+        for chunk in response.iter_content(chunk_size=cs):
+            if chunk:
+                f.write(chunk)
+                downloaded_size = downloaded_size + len(chunk)
+                elapsed_time = time.time() - start_time
+                speed = downloaded_size / elapsed_time
+                speed = speed / units_size
+                speed = round(speed)
+                mb_size = downloaded_size / units_size
+                mb_tot_size = total_size / units_size
+                mb_size = round(mb_size, 2)
+                mb_tot_size = round(mb_tot_size, 2)
+                print(f'{speed} {units} - {mb_size}/{mb_tot_size}MB')
+                update_main_status(f'{speed}{units} ({mb_size}/{mb_tot_size}MB)')
+                update_dwl_status(f'{speed}{units} ({mb_size}/{mb_tot_size}MB)')
+
+
+
+    
     strippedname = urlfilename.replace('.tar.bz2', '')
     if '.tar.bz2' in urlfilename:
         print('Decompressing folder')
-        os.mkdir(strippedname)
+        os.makedirs(strippedname, exist_ok=True)
         tarball_path = urlfilename
 
         tar_command = ['tar', '-xvjf', tarball_path, '-C', strippedname]
@@ -579,3 +606,4 @@ def main():
 
 main()
         
+
