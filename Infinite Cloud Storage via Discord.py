@@ -32,7 +32,7 @@ webhook = DiscordWebhook(url=wbhkurl, username="Cloud Storage Webhook")
 master = 'master-record.txt'
 limit = 100
 parts = 0
-chunk_size = 24 * 1024 * 1024  #24Mb; Discord limit = 25Mb, so I put 24 to be safe
+chunk_size = 24 * 1024 * 1024  #25Mb; Discord limit = 25Mb, so I put 24 to be safe
 urls = []
 ffi = 0
 g_progress = ''
@@ -251,6 +251,27 @@ def dwl_file_sel():
 def upload_file(file, multiple, p_one):
     try:
         filename = os.path.basename(file)
+        filename = filename.replace(' ', '_') #discord changes spaces to underscores _
+        filename = filename.replace('!', '') #discord strips most special characters
+        filename = filename.replace('@', '') #discord strips most special characters
+        filename = filename.replace('#', '') #discord strips most special characters
+        filename = filename.replace('$', '') #discord strips most special characters
+        filename = filename.replace('%', '') #discord strips most special characters
+        filename = filename.replace('^', '') #discord strips most special characters
+        filename = filename.replace('&', '') #discord strips most special characters
+        filename = filename.replace('*', '') #discord strips most special characters
+        filename = filename.replace('(', '') #discord strips most special characters
+        filename = filename.replace(')', '') #discord strips most special characters
+        filename = filename.replace('=', '') #discord strips most special characters
+        filename = filename.replace('+', '') #discord strips most special characters
+        filename = filename.replace('[', '') #discord strips most special characters
+        filename = filename.replace(']', '') #discord strips most special characters
+        filename = filename.replace('{', '') #discord strips most special characters
+        filename = filename.replace('}', '') #discord strips most special characters
+        filename = filename.replace(';', '') #discord strips most special characters
+        filename = filename.replace(',', '') #discord strips most special characters
+
+        
         print(f'Uploading "{file}"')
         with open(file, 'rb') as f:
             
@@ -265,14 +286,12 @@ def upload_file(file, multiple, p_one):
                 if p_one == True:
                     with open(master, 'a') as m:
                         filename = filename.replace('.part1', '') #assume its .part1, since its the first iteration (hence "if p_one == True:")
-                        filename = filename.replace(' ', '_') #discord changes spaces to underscores _
                         m.write(filename + ' <SPLIT>\n')
                 else:
                     print('Skip writing to master record')
                     #do nothing section. this is because it is uploading a part of a file which isnt the first, which means its already in the master record.
             else:
                 with open(master, 'a') as m:
-                    filename = filename.replace(' ', '_') #discord changes spaces to underscores _
                     m.write(filename + '\n')
             return
         return
