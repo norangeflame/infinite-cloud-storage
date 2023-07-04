@@ -533,6 +533,9 @@ def del_file_sel():
     except:
         tk.messagebox.showerror(title='Error', message='No file/folder selected.')
         return
+
+    if '.tar.bz2' in linetext:
+        linetext = linetext.replace(' <FOLDER>', '')
     with open(master, 'r') as file:
         lines = file.readlines()
 
