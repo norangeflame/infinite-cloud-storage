@@ -11,7 +11,7 @@
  - [x] Files and folders that are split are automatically joined back together when downloaded. This process _shouldn't_ corrupt any data.
  - [x] Delete files from the record.
  - [x] Status indicator that can show download speed.
- - [ ] PLANNED: Proper config GUI, so you don't have to enter in URLS, tokens, etc. directly into the code.
+ - [x] Proper config GUI, so you don't have to enter in URLS, tokens, etc. directly into the code.
  - [ ] PLANNED: Upload speed indicator.
 
 ### Instructions
