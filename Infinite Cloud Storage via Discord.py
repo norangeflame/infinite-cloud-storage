@@ -9,14 +9,11 @@
 # All coding by norangeflame
 
 from discord_webhook import DiscordWebhook #NEED TO INSTALL (run in command prompt: pip install discord-webhook)
-#import asyncio
 import tkinter as tk
-#from tkinter import ttk
 from tkinter import filedialog
 import os
 import requests
 import json
-#import urllib.request
 import subprocess
 import time
 import configparser
