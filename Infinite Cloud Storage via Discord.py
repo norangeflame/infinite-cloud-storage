@@ -1,54 +1,52 @@
-###Unlimited Cloud Storage via Discord###
-#----------------------------------------
-#Usage:
-# - Add your token to the "token" variable
-# - Add the channel ID to store files to the "channelId" variable
-# - Add the webhook URL to both the "wbhkurl" variable
-# - NOTE: make sure you don't use the file storing channel for general messages. This will cause longer download times.
-# - NOTE: make sure the Webhook is set to send messages to the file storing channel. A mismatch in your channelId and the channel
+### Unlimited Cloud Storage via Discord ###
+#------------------------------------------
+# Usage:
+# - Run the application, and press the "config" button. Enter in your bot token, webhook url, and the channelID to send messages in. Entering incorrect/expired values will break the cloud storage, and any attempt to upload/download files will result in errors. 
+# - NOTE: please make sure you don't use the file storing channel for general messages. This will cause longer download times.
+# - NOTE: please make sure the Webhook is set to send messages to the file storing channel. A mismatch in your channelID and the channel
 #         that the webhook is set to will break the cloud storage.
-#
-#
-#
-#
-#
+# 
+# All coding by norangeflame
 
 from discord_webhook import DiscordWebhook #NEED TO INSTALL (run in command prompt: pip install discord-webhook)
-import asyncio
+#import asyncio
 import tkinter as tk
-from tkinter import ttk
+#from tkinter import ttk
 from tkinter import filedialog
 import os
 import requests
 import json
-import urllib.request
+#import urllib.request
 import subprocess
 import time
+import configparser
 
 #variables
-token = 'TOKEN_HERE'
-channelId = 'CHANNEL_ID_TO_STORE_FILES_HERE'
-limit = 100
+r_config = configparser.ConfigParser()
+r_config.sections()
+r_config.read('config.ini')
+token = r_config['DEFAULT' ]['token']
+wbhkurl = r_config['DEFAULT' ]['webhook_url']
+channelId = r_config['DEFAULT' ]['channelId']
 
-wbhkurl = 'WEBHOOK_URL_HERE'
-webhook = DiscordWebhook(url=wbhkurl, username="Cloud Storage Webhook") #Can change username if you want
+webhook = DiscordWebhook(url=wbhkurl, username="Cloud Storage Webhook")
 
 
 master = 'master-record.txt'
-
+limit = 100
 parts = 0
 chunk_size = 18 * 1024 * 1024  #18Mb; Discord limit = 20Mb, so I put 18 to be safe
-
 urls = []
 ffi = 0
 g_progress = ''
-
 g_dwl_status = ''
 g_status = ''
-
 cs = 10 * 1024 * 1024  #10Mb
-units_size = 1024 * 1024
+units_size = 1024 * 1024 #1Mb
 units = 'Mb/s'
+config_token = ''
+config_wbhkurl = ''
+config_channelId = ''
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -136,6 +134,7 @@ def download_dialog():
     dwl = tk.Tk()
     dwl.title('Download a file/folder')
     dwl.config(bg='#1c1c1c')
+    dwl.resizable(False, False)
     g_frame = tk.Frame(dwl, bg='#1c1c1c')
     g_title = tk.Label(dwl, text='Download file', width=50, height=1, fg='#dedede', bg='#141414', font='fixedsys')
     g_title.pack()
@@ -177,7 +176,7 @@ def delete_file_folder_dialog():
     delete.title('Delete a file/folder')
 
     delete.config(bg='#1c1c1c')
-    
+    delete.resizable(False, False)
     g_title = tk.Label(delete, text='Delete file', width=50, height=1, fg='#dedede', bg='#141414', font='fixedsys')
     g_title.pack()
 
@@ -547,24 +546,106 @@ def del_file_sel():
             file.write(line)
     delete.destroy()
     delete_file_folder_dialog()
-        
-#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+def update_config(t, w, i):
+    global token
+    global wbhkurl
+    global channelId
+
+    #msg
+    tk.messagebox.showinfo(title='Saved', message='Information saved. You will not need to re-enter it in the future, unless you wish to modify.')
+
+    #set in case not restarted
+    token = t.strip()
+    wbhkurl = w.strip()
+    channelId = i.strip()
+
+    #writing
+    w_config = configparser.ConfigParser()
+    w_config['DEFAULT']['token'] = token
+    w_config['DEFAULT']['webhook_url'] = wbhkurl
+    w_config['DEFAULT']['channelId'] = channelId
+    with open('config.ini', 'w') as configfile:
+        w_config.write(configfile)
+    return
+
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#CONFIG GUI
+def config():
+    config_token = tk.StringVar()
+    config_wbhkurl = tk.StringVar()
+    config_channelId = tk.StringVar()
+
+    def call_config_update():
+            update_config(g_config_token_entry.get(), g_config_webhook_entry.get(), g_config_channelid_entry.get())
+            config_window.destroy()
+
+    #window config
+    config_window = tk.Tk()
+    config_window.title('Config Menu')
+    config_window.geometry('500x220')
+    config_window.config(bg='#1c1c1c')
+    config_window.resizable(False, False)
+    
+    try:
+        icon = tk.PhotoImage(file = 'main.png')
+        config_window.iconphoto(False, icon)
+    except:
+        print('Icons not available')
+
+    #framing
+    configframetoken = tk.Frame(config_window, bg='#1c1c1c', pady=10)
+    configframeurl = tk.Frame(config_window, bg='#1c1c1c', pady=10)
+    configframechid = tk.Frame(config_window, bg='#1c1c1c', pady=10)
+    #main
+    g_config_token_label = tk.Label(configframetoken, text='Discord bot token:', fg='#dedede', bg='#1c1c1c', font='fixedsys', justify='left')
+    g_config_webhookurl_label = tk.Label(configframeurl, text='Discord webhook URL', fg='#dedede', bg='#1c1c1c', font='fixedsys')
+    g_config_channelid_label = tk.Label(configframechid, text='Discord ChannelID', fg='#dedede', bg='#1c1c1c', font='fixedsys')
+    g_config_token_entry = tk.Entry(configframetoken, textvariable=config_token, bg='#141414', fg='#dedede', width=60, exportselection=0, font='fixedsys', insertbackground='white')
+    g_config_webhook_entry = tk.Entry(configframeurl, textvariable=config_wbhkurl, bg='#141414', fg='#dedede', width=60, exportselection=0, font='fixedsys', insertbackground='white')
+    g_config_channelid_entry = tk.Entry(configframechid, textvariable=config_channelId, bg='#141414', fg='#dedede', width=60, exportselection=0, font='fixedsys', insertbackground='white')
+    g_config_ok_btn = tk.Button(config_window, text='OK', command=call_config_update, width=10, fg='#dedede', bg='#262626', activebackground='#363636', activeforeground='#dedede', relief='flat', font='fixedsys')
+    #packing
+    g_config_token_label.pack()
+    g_config_webhookurl_label.pack()
+    g_config_channelid_label.pack()
+    g_config_token_entry.pack()
+    g_config_webhook_entry.pack()
+    g_config_channelid_entry.pack()
+
+    configframetoken.pack()
+    configframeurl.pack()
+    configframechid.pack()
+
+    g_config_ok_btn.pack()
+    return
+
+
+
+    
 ###GUI###
 #this is the main screen with buttons etc.
 def main():
     #global g_progress
+    #window config
+    global config_token
+    global config_wbhkurl
+    global config_channelId
     global g_status
     window = tk.Tk()
     window.title('Infinite Cloud Storage')
     window.geometry('380x160')
     window.config(bg='#1c1c1c')
+    window.resizable(False, False)
     
+    #framing
     g_topframe = tk.Frame(window, bg='#1c1c1c')
     g_middleframe = tk.Frame(window, bg='#1c1c1c', pady=15)
     g_bottomframe = tk.Frame(window, bg='#1c1c1c', pady=2)
-    g_statusframe = tk.Frame(window, bg='#1c1c1c')
+    g_statusframe = tk.Frame(window, bg='#141414')
     
+    #main
     g_title = tk.Label(g_topframe, text='Infinite Cloud Storage via Discord', fg='#dedede', bg='#141414', width=60, height=3, font='fixedsys')
 
     g_upl_fil_btn = tk.Button(g_middleframe, text='Upload File', command=upload_file_dialog, width=20, fg='#dedede', bg='#262626', activebackground='#363636', activeforeground='#dedede', relief='flat', font='fixedsys')
@@ -573,9 +654,11 @@ def main():
 
     g_dwl_fil_fol_btn = tk.Button(g_middleframe, text='Download File/Folder', command=download_dialog, width=20, fg='#dedede', bg='#262626', activebackground='#363636', activeforeground='#dedede', relief='flat', font='fixedsys')
 
-    g_del_fil_fol_btn = tk.Button(g_bottomframe, text='Delete File', command=delete_file_folder_dialog, width=20, fg='#dedede', bg='#262626', activebackground='#363636', activeforeground='#dedede', relief='flat', font='fixedsys')
+    g_del_fil_fol_btn = tk.Button(g_bottomframe, text='Delete File', command=delete_file_folder_dialog, width=20, height=1, fg='#dedede', bg='#262626', activebackground='#363636', activeforeground='#dedede', relief='flat', font='fixedsys')
 
-    g_status = tk.Label(g_statusframe, text='Ready', width=50, height=1, fg='#dedede', bg='#141414', font='fixedsys')
+    g_config_btn = tk.Button(g_statusframe, text='Config', command=config, width=8, fg='#dedede', bg='#141414', activebackground='#363636', activeforeground='#dedede', relief='flat', font='fixedsys')
+
+    g_status = tk.Label(g_statusframe, text='Ready', width=380, height=1, fg='#dedede', bg='#141414', font='fixedsys', anchor='w')
 
     #packing
     g_title.pack()
@@ -583,7 +666,8 @@ def main():
     g_upl_fol_btn.pack(side='left')
     g_dwl_fil_fol_btn.pack(side='right')
     g_del_fil_fol_btn.pack(side='right')
-    g_status.pack()
+    g_config_btn.pack(side='right')
+    g_status.pack(side='left')
     g_topframe.pack()
     g_middleframe.pack()
     g_bottomframe.pack()
@@ -596,7 +680,14 @@ def main():
         print('Icons not available')
 
 
-        
+    #config variables  
+
+
+
+
+
+
+
     window.mainloop()
 
 
@@ -606,4 +697,3 @@ def main():
 
 main()
         
-
