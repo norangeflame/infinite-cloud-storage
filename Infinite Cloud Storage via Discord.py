@@ -32,7 +32,7 @@ webhook = DiscordWebhook(url=wbhkurl, username="Cloud Storage Webhook")
 master = 'master-record.txt'
 limit = 100
 parts = 0
-chunk_size = 18 * 1024 * 1024  #18Mb; Discord limit = 20Mb, so I put 18 to be safe
+chunk_size = 24 * 1024 * 1024  #24Mb; Discord limit = 25Mb, so I put 24 to be safe
 urls = []
 ffi = 0
 g_progress = ''
