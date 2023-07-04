@@ -72,7 +72,7 @@ def upload_file_dialog():
     else:
         print('The filename is not present in the master record.')
         
-        if finfo.st_size <= 18874368: #1024 * 1024 * 18
+        if finfo.st_size <= chunk_size: #1024 * 1024 * 18
             upload_file(file, False, False)
             
         else:
