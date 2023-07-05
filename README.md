@@ -11,11 +11,12 @@
  - [x] Files and folders that are split are automatically joined back together when downloaded. This process _shouldn't_ corrupt any data.
  - [x] Delete files from the record.
  - [x] Status indicator that can show download speed.
- - [x] Proper config GUI, so you don't have to enter in URLS, tokens, etc. directly into the code.
+ - [x] Proper config GUI, so you don't have to enter in URLS directly into the code.
  - [ ] PLANNED: Upload speed indicator.
 
-### Instructions
- - Instructions in the .py file.
+### Instructions & Requirements
+ - You require a Discord Webhook (and the URL). Tutorial [here](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks).
+ - You must enter it into the "config" section of the application. Press the "config" button to access this.
 
 
 ___
