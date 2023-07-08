@@ -17,7 +17,7 @@
 ### Instructions & Requirements
  - You require a Discord Webhook (and the URL). Tutorial [here](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks).
  - You need to install the python library "discord-webhook" via `pip install discord-webhook` in your command line (unless you run via compiled executable).
- - You must enter it into the "config" section of the application. Press the "config" button to access this.
+ - You must enter the webhook URL into the "config" section of the application. Press the "config" button to access this.
 
 
 ___
