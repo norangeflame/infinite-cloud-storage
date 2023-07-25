@@ -13,6 +13,7 @@
  - [x] Status indicator that can show download speed.
  - [x] Proper config GUI, so you don't have to enter in URLS directly into the code.
  - [ ] PLANNED: Upload speed indicator.
+ - [ ] PLANNED: Encryption.
 
 ### Instructions & Requirements
  - You require a Discord Webhook (and the URL). Tutorial [here](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks).
