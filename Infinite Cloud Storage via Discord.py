@@ -1,10 +1,8 @@
 ### Unlimited Cloud Storage via Discord ###
 #------------------------------------------
 # Usage:
-# - Run the application, and press the "config" button. Enter in your bot token, webhook url, and the channelID to send messages in. Entering incorrect/expired values will break the cloud storage, and any attempt to upload/download files will result in errors. 
-# - NOTE: please make sure you don't use the file storing channel for general messages. This will cause longer download times.
-# - NOTE: please make sure the Webhook is set to send messages to the file storing channel. A mismatch in your channelID and the channel
-#         that the webhook is set to will break the cloud storage.
+# - Enter the webhook URL into the "config" section of the application. Press the "config" button to access this.
+# - NOTE: Don't modify the TXT file, it acts as a log for files so they can be downloaded/uploaded correctly
 # 
 # All coding by norangeflame
 
